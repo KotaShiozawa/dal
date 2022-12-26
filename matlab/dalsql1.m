@@ -40,15 +40,22 @@ opt=set_defaults(opt,'solver','cg',...
                      'stopcond','pdg');
 
 
-
+% '主問題の損失関数',二乗誤差,'双対問題の損失関数',二乗誤差の双対
 prob.floss    = struct('p',@loss_sqp,'d',@loss_sqd,'args',{{bb}});
+
+% L1正則化のために係数ベクトルの要素の絶対値を計算
 prob.fspec    = @(xx)abs(xx);
+
 prob.dnorm    = @(vv)max(abs(vv));
 prob.obj      = @objdall1;
 prob.softth   = @l1_softth;
 prob.stopcond = opt.stopcond;
+
+% Lagrangian multipliersの下限と上限
+% 二乗誤差では-inf*ones(size(bb))とinf*ones(size(bb))が用いられる
 prob.ll       = -inf*ones(size(bb));
 prob.uu       = inf*ones(size(bb));
+
 prob.Ac       =[];
 prob.bc       =[];
 prob.info     =[];

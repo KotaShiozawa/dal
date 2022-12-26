@@ -47,28 +47,40 @@
 
 function [ww,bias,status]=dallrgl(ww, bias, A, yy, lambda, varargin)
 
+% optで指定されたパラメーターを構造体に変換
 opt=propertylist2struct(varargin{:});
+% optで指定されなかったパラメーターをデフォルトに設定
 opt=set_defaults(opt,'solver','cg',...
                      'stopcond','pdg',...
                      'blks',[]);
 
+% 正解ラベルが正しく与えられているか確認
 if ~isequal(unique(yy), [-1;1])
   error('yy must be a column vector of -1''s and 1''s');
 end
 
+% グループのサイズが指定されていない場合は入力サイズからグループサイズを自動で決定
 if isempty(opt.blks)
   opt.blks=size(ww,1)*ones(1,size(ww,2));
   ww = ww(:);
 end
 
+% '主問題の損失関数',ロジスティック損失,'双対問題の損失関数',ロジスティック損失の双対
 prob.floss    = struct('p',@loss_lrp,'d',@loss_lrd,'args',{{yy}});
+
+% グループL1正則化のための関数gl_specを指定
 prob.fspec    = @(ww)gl_spec(ww,opt.blks);
+
 prob.dnorm    = @(ww)gl_dnorm(ww,opt.blks);
 prob.obj      = @objdalgl;
 prob.softth   = @gl_softth;
 prob.stopcond = opt.stopcond;
+
+% Lagrangian multipliersの下限と上限
+% ロジスティック損失ではmin(0,yy)とmax(0,yy)が用いられる
 prob.ll       = min(0,yy);
 prob.uu       = max(0,yy);
+
 prob.Ac       =[];
 prob.bc       =[];
 prob.info     = struct('blks',opt.blks);
@@ -81,6 +93,7 @@ if isequal(opt.stopcond,'fval')
   opt.feval = 1;
 end
 
+% Aが行列[mm,nn]かcell array {fA, fAT, mm, nn}か判定してデータを整形
 if isnumeric(A)
   A = A(:,:);
   [mm,nn]=size(A);
@@ -109,6 +122,8 @@ else
   B = ones(mm,1);
 end
 
+% 通常の双対拡張ラグランジュ法で最適化を実行
+% dalではgrouped L1も指定可能
 [ww,bias,status]=dal(prob,ww,bias,fA,B,lambda,opt);
 
 
