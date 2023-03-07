@@ -16,6 +16,8 @@
 %           where fA and fAT are function handles to the functions that
 %           return A*x and A'*x, respectively, and mm and nn are the
 %           numbers of rows and columns of A.
+% 
+% 下の行は間違いと思われる。正しくはyyではなくbb。bbは±1以外の値も取れる。
 %  yy     : the target label vector (-1 or +1) ([mm,1])
 %  lambda : the regularization constant
 %  <opt>  : list of 'fieldname1', value1, 'filedname2', value2, ...
